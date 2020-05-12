@@ -24,7 +24,7 @@ import javax.persistence.Table;
 import java.io.Serializable;
 
 @Entity
-@Table(name = "movie")
+//@Table(name = "movie")
 public class Movie implements Serializable {
 
     private static final long serialVersionUID = 1L;
