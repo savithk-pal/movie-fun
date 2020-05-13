@@ -29,14 +29,14 @@ import java.util.List;
 @Repository
 public class MoviesBean {
 
-    @PersistenceContext
+    @PersistenceContext(unitName = "movies-unit")
     private EntityManager entityManager;
 
     public Movie find(Long id) {
         return entityManager.find(Movie.class, id);
     }
 
-    @Transactional
+    //Removed @Transactional annotation
     public void addMovie(Movie movie) {
         entityManager.persist(movie);
     }

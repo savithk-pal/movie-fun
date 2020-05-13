@@ -1,6 +1,9 @@
 package org.superbiz.moviefun;
 
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Controller;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.superbiz.moviefun.albums.Album;
 import org.superbiz.moviefun.albums.AlbumFixtures;
@@ -19,11 +22,20 @@ public class HomeController {
     private final MovieFixtures movieFixtures;
     private final AlbumFixtures albumFixtures;
 
-    public HomeController(MoviesBean moviesBean, AlbumsBean albumsBean, MovieFixtures movieFixtures, AlbumFixtures albumFixtures) {
+    private final PlatformTransactionManager moviesPlatformTransactionManager;
+    private final PlatformTransactionManager albumsPlatformTransactionManager;
+
+    public HomeController(MoviesBean moviesBean, AlbumsBean albumsBean,
+                          MovieFixtures movieFixtures, AlbumFixtures albumFixtures,
+                          @Qualifier("moviesPlatformTransactionManager") PlatformTransactionManager moviesTransactionManager,
+                          @Qualifier("albumsPlatformTransactionManager") PlatformTransactionManager albumsTransactionManager) {
         this.moviesBean = moviesBean;
         this.albumsBean = albumsBean;
         this.movieFixtures = movieFixtures;
         this.albumFixtures = albumFixtures;
+        this.moviesPlatformTransactionManager = moviesTransactionManager;
+        this.albumsPlatformTransactionManager = albumsTransactionManager;
+
     }
 
     @GetMapping("/")
@@ -31,6 +43,7 @@ public class HomeController {
         return "index";
     }
 
+    /*
     @GetMapping("/setup")
     public String setup(Map<String, Object> model) {
         for (Movie movie : movieFixtures.load()) {
@@ -46,4 +59,37 @@ public class HomeController {
 
         return "setup";
     }
+    */
+
+    @GetMapping("/setup")
+    public String setup(Map<String, Object> model) {
+        createMovies();
+        createAlbums();
+
+        model.put("movies", moviesBean.getMovies());
+        model.put("albums", albumsBean.getAlbums());
+
+        return "setup";
+    }
+
+    private void createMovies() {
+        new TransactionTemplate(moviesPlatformTransactionManager).execute(status -> {
+            for(Movie movie : movieFixtures.load()) {
+                moviesBean.addMovie(movie);
+            }
+
+            return null;
+        });
+    }
+
+    private void createAlbums() {
+        new TransactionTemplate(albumsPlatformTransactionManager).execute(status -> {
+            for(Album album : albumFixtures.load()) {
+                albumsBean.addAlbum(album);
+            }
+
+            return null;
+        });
+    }
+
 }
